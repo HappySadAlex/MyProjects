@@ -1,0 +1,15 @@
+server:
+    port: 8081
+
+spring:
+    application:
+        name: reactivetest
+    data:
+        mongodb:
+            uri: mongodb://localhost:27017/reactiveDb
+
+logging:
+    level:
+        org.mongodb.driver.protocol.command: DEBUG
+        org.mongodb.driver.connection: WARN
+        org.mongodb.driver.cluster: WARN

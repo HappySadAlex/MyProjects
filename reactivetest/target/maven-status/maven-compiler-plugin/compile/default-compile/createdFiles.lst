@@ -1,0 +1,8 @@
+com\happysadman\reactivetest\service\impl\UserServiceImpl.class
+com\happysadman\reactivetest\repository\UserRepository.class
+com\happysadman\reactivetest\model\User$UserBuilder.class
+com\happysadman\reactivetest\util\GenerateUUID.class
+com\happysadman\reactivetest\controller\UserController.class
+com\happysadman\reactivetest\model\User.class
+com\happysadman\reactivetest\ReactiveTestApplication.class
+com\happysadman\reactivetest\service\UserService.class
