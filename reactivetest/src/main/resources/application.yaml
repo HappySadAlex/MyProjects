@@ -4,9 +4,9 @@ server:
 spring:
     application:
         name: reactivetest
-    data:
-        mongodb:
-            uri: mongodb://localhost:27017/reactiveDb
+#    data:
+#        mongodb:
+#            uri: mongodb://localhost:27017/cucumbersAndPots
 
 logging:
     level:
