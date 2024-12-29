@@ -8,6 +8,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class Main {
@@ -39,6 +40,7 @@ public class Main {
         //In result   c3 -> c1 -> c2 -> c1 -> c4 -> c1    must be:     p -> p -> p (if max pot size 4)
 
         //Solution 1
+        System.out.println("Solution 1");
         Flux<Pot> result1 = solutionOne(cucumbers, 3)
                 .log();
         result1.subscribe();
@@ -53,7 +55,8 @@ public class Main {
         }
         System.out.println("Total count of pots: " + block.size());
 
-        System.out.println("\n ------------------------------------------------------- \n");
+        System.out.println("\n ------------------------------------------------------- \n" +
+                "\t\t Solution 2");
 
         //Solution 2
         Flux<Pot> result2 = solutionTwo(cucumbers, 3)
@@ -69,6 +72,7 @@ public class Main {
             }
         }
         System.out.println("Count of pots: " + block2.size());
+
     }
 
     public static Flux<Pot> solutionOne(Flux<Cucumber> cucumberFlux, Integer potMaxSize){
@@ -90,16 +94,15 @@ public class Main {
                         .build()));
     }
 
-    //TODO: условия выставить в нормальном порядке и обработать все случаи!
     private static Flux<Pot> solutionTwo(Flux<Cucumber> cucumbers, Integer potMaxSize){
         return cucumbers
                 // Группируем огурцы в банки
                 .scan(new ArrayList<Pot>(), (pots, cucumber) -> {
                     Pot lastPot = pots.isEmpty() ? new Pot(new ArrayList<>(), potMaxSize)
-                            : pots.get(pots.size() == 1 ? 0 : pots.size() - 1);
-                    //условие если первая или предыдущая банка не заполнена полностью
-                    int potFullness = lastPot.getCucumbers().stream().mapToInt(Cucumber::getSize).sum();
-                    int freeSpaceInPot = potMaxSize - potFullness;
+                            : pots.get(pots.size() == 1 ? 0 : pots.size() - 1); //если банок нет - создаем новую, иначе берем последнюю
+                    int potFullness = lastPot.getCucumbers().stream().mapToInt(Cucumber::getSize).sum(); // заполненность текущей банки
+                    int freeSpaceInPot = potMaxSize - potFullness; // свободное место в банке
+
                     if(potFullness == 0 && cucumber.getSize() <= potMaxSize){
                         lastPot.getCucumbers().add(cucumber);
                         pots.add(lastPot);
@@ -138,7 +141,6 @@ public class Main {
                             return pots;
                         }
                     }
-
                 })
                 .filter(pots -> !pots.isEmpty())
                 .map(pots -> pots.get(pots.size() - 1))
