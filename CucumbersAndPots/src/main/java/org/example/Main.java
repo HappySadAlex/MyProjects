@@ -48,10 +48,10 @@ public class Main {
             Pot pot = block.get(i - 1);
             System.out.println("Pot number: " + i);
             for (Cucumber c : pot.getCucumbers()){
-                System.out.println("\tCuc size: " + c.getSize());
+                System.out.println("\tCucumber size: " + c.getSize());
             }
         }
-        System.out.println("Count of pots: " + block.size());
+        System.out.println("Total count of pots: " + block.size());
 
         System.out.println("\n ------------------------------------------------------- \n");
 
