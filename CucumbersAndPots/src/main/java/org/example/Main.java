@@ -8,7 +8,6 @@ import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class Main {
@@ -73,6 +72,35 @@ public class Main {
         }
         System.out.println("Count of pots: " + block2.size());
 
+        System.out.println("\n ------------------------------------------------------- \n" +
+                "\t\t Solution 3");
+
+        Flux<Pot> result3 = convert(cucumbers, 2);
+        result3.subscribe();
+        List<Pot> block3 = result3.collectList().block();
+        for(int i = 1; i <= block3.size(); i++){
+            Pot pot = block3.get(i - 1);
+            System.out.println("Pot number: " + i);
+            for (Cucumber c : pot.getCucumbers()){
+                System.out.println("\tCuc size: " + c.getSize());
+            }
+        }
+        System.out.println("Count of pots: " + block3.size());
+
+        System.out.println("\n ------------------------------------------------------- \n" +
+                "\t\t Solution 4");
+
+        Flux<Pot> result4 = convert2(cucumbers, 3);
+        result3.subscribe();
+        List<Pot> block4 = result4.collectList().block();
+        for(int i = 1; i <= block4.size(); i++){
+            Pot pot = block4.get(i - 1);
+            System.out.println("Pot number: " + i);
+            for (Cucumber c : pot.getCucumbers()){
+                System.out.println("\tCuc size: " + c.getSize());
+            }
+        }
+        System.out.println("Count of pots: " + block4.size());
     }
 
     public static Flux<Pot> solutionOne(Flux<Cucumber> cucumberFlux, Integer potMaxSize){
@@ -96,7 +124,6 @@ public class Main {
 
     private static Flux<Pot> solutionTwo(Flux<Cucumber> cucumbers, Integer potMaxSize){
         return cucumbers
-                // Группируем огурцы в банки
                 .scan(new ArrayList<Pot>(), (pots, cucumber) -> {
                     Pot lastPot = pots.isEmpty() ? new Pot(new ArrayList<>(), potMaxSize)
                             : pots.get(pots.size() == 1 ? 0 : pots.size() - 1); //если банок нет - создаем новую, иначе берем последнюю
@@ -146,6 +173,88 @@ public class Main {
                 .map(pots -> pots.get(pots.size() - 1))
                 .filter(pot -> !pot.getCucumbers().isEmpty())
                 .distinctUntilChanged(); // Исключаем дублирование результатов
+    }
+
+    public static Flux<Pot> convert(Flux<Cucumber> cucumbersFlux, int potMaxSize) {
+        return cucumbersFlux
+                .collectList()
+                .flatMapMany(cucumbers -> {
+                    List<Pot> pots = new ArrayList<>();
+                    List<Cucumber> currentPotCucumbers = new ArrayList<>();
+                    int currentSize = 0;
+
+                    for (Cucumber cucumber : cucumbers) {
+                        int cucumberSize = cucumber.getSize();
+
+                        while (cucumberSize > 0) {
+                            if (currentSize + cucumberSize <= potMaxSize) {
+                                // Если Cucumber помещается в текущий Pot целиком
+                                currentPotCucumbers.add(Cucumber.builder().size(cucumberSize).build());
+                                currentSize += cucumberSize;
+                                cucumberSize = 0;
+                            } else {
+                                // Если Cucumber не помещается, добавляем только часть
+                                int remainingSize = potMaxSize - currentSize;
+                                currentPotCucumbers.add(Cucumber.builder().size(remainingSize).build());
+                                cucumberSize -= remainingSize; // Уменьшаем размер оставшейся части Cucumber
+                                currentSize = potMaxSize; // Текущий Pot заполнен
+                            }
+
+                            // Если Pot заполнен, добавляем его в список и создаем новый
+                            if (currentSize == potMaxSize) {
+                                pots.add(new Pot(new ArrayList<>(currentPotCucumbers), potMaxSize));
+                                currentPotCucumbers.clear();
+                                currentSize = 0;
+                            }
+                        }
+                    }
+
+                    // Добавляем последний Pot, если остались Cucumbers
+                    if (!currentPotCucumbers.isEmpty()) {
+                        pots.add(new Pot(currentPotCucumbers, potMaxSize));
+                    }
+
+                    return Flux.fromIterable(pots);
+                });
+    }
+
+    public static Flux<Pot> convert2(Flux<Cucumber> cucumbersFlux, int potMaxSize) {
+        return Flux.create(sink -> {
+            List<Cucumber> currentPotCucumbers = new ArrayList<>();
+            final int[] currentSize = {0};
+
+            cucumbersFlux.subscribe(cucumber -> {
+                int cucumberSize = cucumber.getSize();
+
+                while (cucumberSize > 0) {
+                    if (currentSize[0] + cucumberSize <= potMaxSize) {
+                        // Если Cucumber помещается в текущий Pot
+                        currentPotCucumbers.add(Cucumber.builder().size(cucumberSize).build());
+                        currentSize[0] += cucumberSize;
+                        cucumberSize = 0;
+                    } else {
+                        // Если Cucumber не помещается, добавляем часть
+                        int remainingSize = potMaxSize - currentSize[0];
+                        currentPotCucumbers.add(Cucumber.builder().size(remainingSize).build());
+                        cucumberSize -= remainingSize;
+                        currentSize[0] = potMaxSize;
+                    }
+
+                    // Если Pot заполнен, отправляем его и начинаем новый
+                    if (currentSize[0] == potMaxSize) {
+                        sink.next(new Pot(new ArrayList<>(currentPotCucumbers), potMaxSize));
+                        currentPotCucumbers.clear();
+                        currentSize[0] = 0;
+                    }
+                }
+            }, sink::error, () -> {
+                // Завершаем поток: отправляем последний Pot, если он не пуст
+                if (!currentPotCucumbers.isEmpty()) {
+                    sink.next(new Pot(currentPotCucumbers, potMaxSize));
+                }
+                sink.complete();
+            });
+        });
     }
 
 }
